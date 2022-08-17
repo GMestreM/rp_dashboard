@@ -198,7 +198,7 @@ app = dash.Dash(
     assets_folder='./assets',
     include_assets_files=True,
     title='Risk Parity dashboard',
-    external_stylesheets=[dbc.icons.BOOTSTRAP],
+    external_stylesheets=[dbc.icons.BOOTSTRAP, dbc.themes.DARKLY],
     meta_tags=[
         {
             "name": "viewport",
@@ -442,4 +442,4 @@ def update_table_risk_metrics(relayout_data, figure_val):
 # if __name__ == "__main__":
 #     app.run(
 #         debug=True, # Do not use in production!
-#     )
+#     )if __name__ == "__main__":
