@@ -208,6 +208,8 @@ app = dash.Dash(
     # external_stylesheets=[dbc.themes.BOOTSTRAP]  # If not included, use the .css files located in assets folder
 )
 
+server = app.server
+
 html_main_title = html.H1('Risk Parity Dashboard')
 
 table_metrics = dbc.Table.from_dataframe(df = df_metrics.round(decimals = 2), 
@@ -437,7 +439,7 @@ def update_table_risk_metrics(relayout_data, figure_val):
 
 
 
-if __name__ == "__main__":
-    app.run(
-        debug=True, # Do not use in production!
-    )
+# if __name__ == "__main__":
+#     app.run(
+#         debug=True, # Do not use in production!
+#     )
