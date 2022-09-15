@@ -42,6 +42,11 @@ df.index.name = 'Dates'
 df_weights   = dict_strategy_pnl['df_model_weights']
 df_asset_ret = dict_strategy_pnl['df_asset_return_model']
 
+# Rename columns
+dict_rename  = dict_strategy_pnl['dict_asset_name']
+df_weights.rename(columns = dict_rename, inplace = True)
+df_asset_ret.rename(columns = dict_rename, inplace = True)
+
 # Define initial metrics dataframe
 df_metrics = get_summary_metrics(df_prices_1 = df[df.columns[0]].to_frame(),
                                  df_prices_2 = df[df.columns[1]].to_frame())
@@ -205,12 +210,13 @@ for i, label_pie in enumerate(labels_pie):
 # Now to color list in the same order
 list_colors_assets = [dict_colors_assets[name] for name in labels_pie]
 
-fig_pie = make_subplots(rows=1, cols=2, specs=[[
-        {'type':'domain'},# type domain for pie charts
-        {'type':'bar'},# type domain for bar charts
-    ]],
-    subplot_titles=('Allocation', 'Contribution'),
-)
+# fig_pie = make_subplots(rows=1, cols=2, specs=[[
+#         {'type':'domain'},# type domain for pie charts
+#         {'type':'bar'},# type domain for bar charts
+#     ]],
+#     subplot_titles=('Allocation', 'Contribution'),
+# )
+fig_pie = go.Figure()
 
 # Add pie chart
 fig_pie.add_trace(
@@ -221,8 +227,10 @@ fig_pie.add_trace(
         hole=.3, 
         showlegend = False,
         marker_colors = list_colors_assets,
-    ),1,1,
+    )#,1,1,
 )
+
+fig_waterfall = go.Figure()
 
 # Get last 3M contribution
 df_weights_3M = df_weights# .loc[(-21*3):,:].copy()
@@ -234,7 +242,7 @@ asset_contrib_returns = df_contrib_returns_assets.sum(axis = 0).values
 
 # Add bar chart
 name_aux = f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}'
-fig_pie.add_trace(
+fig_waterfall.add_trace(
     go.Waterfall(
         x = df_contrib_returns_assets.columns,
         y = asset_contrib_returns,
@@ -242,15 +250,15 @@ fig_pie.add_trace(
         showlegend = False,
         name = name_aux,
         connector = {"line":{"color":"rgb(0, 0, 0)", 'width':5}},
-    ),1,2,
+    )#,1,2,
 )
 
 # Update dates in subtitles
-dates_names = {
-        'Allocation':f'{df_weights.index.max():%Y-%m-%d}',
-        'Contribution':f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}',
-    }
-fig_pie.for_each_annotation(lambda a: a.update(text = a.text + ' (' + dates_names[a.text] + ') <br>'))
+# dates_names = {
+#         'Allocation':f'{df_weights.index.max():%Y-%m-%d}',
+#         'Contribution':f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}',
+#     }
+# fig_pie.for_each_annotation(lambda a: a.update(text = a.text + ' (' + dates_names[a.text] + ') <br>'))
 
 # https://stackoverflow.com/questions/66064756/how-to-change-subplot-size-and-decrease-space-between-subplot
 # fig_pie.layout.annotations[0].update(y=1.05, x = 0)
@@ -260,7 +268,7 @@ fig_pie.for_each_annotation(lambda a: a.update(text = a.text + ' (' + dates_name
 
 # fig_pie.update_layout(title_pad=dict(t=20), margin=dict(pad=15))
 
-fig_pie.update_layout(yaxis={'tickformat': ',.1%'},)
+fig_waterfall.update_layout(yaxis={'tickformat': ',.1%'},)
 
 
 # Initialize Dash app
@@ -317,32 +325,64 @@ figure_layout = dbc.Container([
                 ], )
             ),
             html.Br(),
-            dbc.Card(
-                dbc.CardBody([
-                    html.H3('Contribution to returns'),
-                    # html.H6(id = 'contrib_returns'),
-                    # html.Br(),
-                    dcc.Graph(figure = fig_pie.update_layout(
-                        template='plotly_dark',
-                        plot_bgcolor= 'rgba(0, 0, 0, 0)',
-                        paper_bgcolor= 'rgba(0, 0, 0, 0)',
-                        autosize = True,
-                        # legend = None,
-                        # legend=dict(
-                        #     orientation="h",
-                        #     y=1.05,      # y-coordinate for the anchor point (1 means top of the y axis in the figure)
-                        #     x=0.0,       # x-coordinate for the anchor point (1 means top of the x axis in the figure) 
-                        #     # y=.9,      # y-coordinate for the anchor point (1 means top of the y axis in the figure)
-                        #     # x=0.02,       # x-coordinate for the anchor point (1 means top of the x axis in the figure) 
-                        #     yanchor="bottom",
-                        #     xanchor="left",
-                        #     font=dict(size= 10),
-                        # ),
-                        margin=dict(l=0, r=0, t=25, b=0, autoexpand = True),
-                        ),config = {'displayModeBar':False},id='graph-figure-pie-contrib',
+            dbc.Row([
+                dbc.Col([
+                    dbc.Card(
+                        dbc.CardBody([
+                            html.H3('Allocation'),
+                            # html.H6(id = 'contrib_returns'),
+                            # html.Br(),
+                            dcc.Graph(figure = fig_pie.update_layout(
+                                template='plotly_dark',
+                                plot_bgcolor= 'rgba(0, 0, 0, 0)',
+                                paper_bgcolor= 'rgba(0, 0, 0, 0)',
+                                autosize = True,
+                                # legend = None,
+                                # legend=dict(
+                                #     orientation="h",
+                                #     y=1.05,      # y-coordinate for the anchor point (1 means top of the y axis in the figure)
+                                #     x=0.0,       # x-coordinate for the anchor point (1 means top of the x axis in the figure) 
+                                #     # y=.9,      # y-coordinate for the anchor point (1 means top of the y axis in the figure)
+                                #     # x=0.02,       # x-coordinate for the anchor point (1 means top of the x axis in the figure) 
+                                #     yanchor="bottom",
+                                #     xanchor="left",
+                                #     font=dict(size= 10),
+                                # ),
+                                margin=dict(l=0, r=0, t=25, b=0, autoexpand = True),
+                                ),config = {'displayModeBar':False},id='graph-figure-pie',
+                            ),
+                        ]),
                     ),
-                ]),
-            ),
+                ], md = {'size':6}, sm = {'size' : 12}),
+                dbc.Col([
+                    dbc.Card(
+                        dbc.CardBody([
+                            html.H3('Contribution'),
+                            # html.H6(id = 'contrib_returns'),
+                            # html.Br(),
+                            dcc.Graph(figure = fig_waterfall.update_layout(
+                                template='plotly_dark',
+                                plot_bgcolor= 'rgba(0, 0, 0, 0)',
+                                paper_bgcolor= 'rgba(0, 0, 0, 0)',
+                                autosize = True,
+                                # legend = None,
+                                # legend=dict(
+                                #     orientation="h",
+                                #     y=1.05,      # y-coordinate for the anchor point (1 means top of the y axis in the figure)
+                                #     x=0.0,       # x-coordinate for the anchor point (1 means top of the x axis in the figure) 
+                                #     # y=.9,      # y-coordinate for the anchor point (1 means top of the y axis in the figure)
+                                #     # x=0.02,       # x-coordinate for the anchor point (1 means top of the x axis in the figure) 
+                                #     yanchor="bottom",
+                                #     xanchor="left",
+                                #     font=dict(size= 10),
+                                # ),
+                                margin=dict(l=0, r=0, t=25, b=0, autoexpand = True),
+                                ),config = {'displayModeBar':False},id='graph-figure-waterfall',
+                            ),
+                        ]),
+                    ),
+                ], md = {'size':6}, sm = {'size' : 12}),
+            ]),
         ], md = {'size':7}, sm = {'size' : 12}),
         dbc.Col([
             dbc.Card(
@@ -537,7 +577,7 @@ def update_table_risk_metrics(relayout_data, figure_val):
 
 # callback to update pie chart
 @app.callback(
-    Output("graph-figure-pie-contrib","figure"), 
+    Output("graph-figure-pie","figure"), 
     [
         Input('graph-figure','relayoutData'),
         Input('graph-figure','figure'),
@@ -571,12 +611,13 @@ def display_pie_chart_contribution(relayout_data, figure_val):
     #Generate pie charts with TAA
     values_pie = df_weights_filt.iloc[-1,:].values
 
-    fig_pie_aux = make_subplots(rows=1, cols=2, specs=[[
-            {'type':'domain'},# type domain for pie charts
-            {'type':'bar'},# type domain for bar charts
-        ]],
-        subplot_titles=('Allocation', 'Contribution'),
-    )
+    # fig_pie_aux = make_subplots(rows=1, cols=2, specs=[[
+    #         {'type':'domain'},# type domain for pie charts
+    #         {'type':'bar'},# type domain for bar charts
+    #     ]],
+    #     subplot_titles=('Allocation', 'Contribution'),
+    # )
+    fig_pie_aux = go.Figure()
 
     # Add pie chart
     fig_pie_aux.add_trace(
@@ -587,11 +628,117 @@ def display_pie_chart_contribution(relayout_data, figure_val):
             hole=.3, 
             showlegend = False,
             marker_colors = list_colors_assets,
-        ),1,1,
+        )#,1,1,
     )
 
-    # Get last 3M contribution
-    df_weights_3M = df_weights_filt.copy()# .loc[(-21*3):,:].copy()
+    # # Get last 3M contribution
+    # df_weights_3M = df_weights_filt.copy()# .loc[(-21*3):,:].copy()
+    # df_contrib_returns_assets = (
+    #     df_weights_3M*df_asset_ret
+    # ).dropna()
+
+    # asset_contrib_returns = df_contrib_returns_assets.sum(axis = 0).values
+
+    # # Add bar chart
+    # name_aux = f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}'
+    # fig_pie_aux.add_trace(
+    #     go.Waterfall(
+    #         x = df_contrib_returns_assets.columns,
+    #         y = asset_contrib_returns,
+    #         measure = ['relative']*len(labels_pie),
+    #         showlegend = False,
+    #         name = name_aux,
+    #         connector = {"line":{"color":"rgb(0, 0, 0)", 'width':5}},
+    #     ),1,2,
+    # )
+
+    # # Update dates in subtitles
+    # dates_names = {
+    #         'Allocation':f'{df_weights_filt.index.max():%Y-%m-%d}',
+    #         'Contribution':f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}',
+    #     }
+    # fig_pie_aux.for_each_annotation(lambda a: a.update(text = a.text + ' (' + dates_names[a.text] + ') <br>'))
+
+    # https://stackoverflow.com/questions/66064756/how-to-change-subplot-size-and-decrease-space-between-subplot
+    # fig_pie.layout.annotations[0].update(y=1.05, x = 0)
+    # fig_pie.layout.annotations[1].update(y=1.05, x = 0)
+
+    # fig_pie.update_layout(margin=dict(t=20000), autosize=False,)
+
+    # fig_pie.update_layout(title_pad=dict(t=20), margin=dict(pad=15))
+
+    fig_pie_aux.update_layout(yaxis={'tickformat': ',.1%'},title = f'{df_weights_filt.index.max():%Y-%m-%d}')
+
+    fig_pie_aux.update_layout(
+                        template='plotly_dark',
+                        plot_bgcolor= 'rgba(0, 0, 0, 0)',
+                        paper_bgcolor= 'rgba(0, 0, 0, 0)',
+                        autosize = True,
+                        # legend = None,
+                        # legend=dict(
+                        #     orientation="h",
+                        #     y=1.05,      # y-coordinate for the anchor point (1 means top of the y axis in the figure)
+                        #     x=0.0,       # x-coordinate for the anchor point (1 means top of the x axis in the figure) 
+                        #     # y=.9,      # y-coordinate for the anchor point (1 means top of the y axis in the figure)
+                        #     # x=0.02,       # x-coordinate for the anchor point (1 means top of the x axis in the figure) 
+                        #     yanchor="bottom",
+                        #     xanchor="left",
+                        #     font=dict(size= 10),
+                        # ),
+                        margin=dict(l=0, r=0, t=25, b=0, autoexpand = True),
+                        )
+
+    return fig_pie_aux
+
+
+# callback to update waterfall chart
+@app.callback(
+    Output("graph-figure-waterfall","figure"), 
+    [
+        Input('graph-figure','relayoutData'),
+        Input('graph-figure','figure'),
+    ]
+)
+def display_pie_chart_contribution(relayout_data, figure_val):
+    # Retrieve initial and end dates
+    try:
+        ini_date = pd.to_datetime(figure_val['layout']["xaxis"]["range"][0], format = '%Y-%m-%d %H:%M:%S.%f')
+        end_date = pd.to_datetime(figure_val['layout']["xaxis"]["range"][1], format = '%Y-%m-%d %H:%M:%S.%f')
+
+        # If the date displayed in the zoomed figure is grater than the range of data, fix it
+        if ini_date < df.index.min():
+            ini_date = df.index.min()
+        if end_date > df.index.max():
+            end_date = df.index.max()
+
+        output_range = f"{ini_date.strftime('%Y-%m-%d')} - {end_date.strftime('%Y-%m-%d')}"
+    except (KeyError, TypeError):
+        # output_range = f'None'
+        output_range = f"{df.index.min().strftime('%Y-%m-%d')} - {df.index.max().strftime('%Y-%m-%d')}"
+    date_range_str = output_range.split(' - ')
+    ini_date_filt = pd.to_datetime(date_range_str[0], format = '%Y-%m-%d')
+    end_date_filt = pd.to_datetime(date_range_str[1], format = '%Y-%m-%d')
+
+
+    #Filter weights
+    df_weights_filt = df_weights.loc[(df_weights.index >= ini_date_filt)&(df_weights.index <= end_date_filt),:].copy()
+    # print(df_weights_filt)
+    
+    #Generate pie charts with TAA
+    values_pie = df_weights_filt.iloc[-1,:].values
+
+    # fig_pie_aux = make_subplots(rows=1, cols=2, specs=[[
+    #         {'type':'domain'},# type domain for pie charts
+    #         {'type':'bar'},# type domain for bar charts
+    #     ]],
+    #     subplot_titles=('Allocation', 'Contribution'),
+    # )
+    fig_pie_aux = go.Figure()
+
+    # Add pie chart
+
+    # # Get last 3M contribution
+    # df_weights_3M = df_weights_filt.copy()# .loc[(-21*3):,:].copy()
     df_contrib_returns_assets = (
         df_weights_3M*df_asset_ret
     ).dropna()
@@ -608,15 +755,15 @@ def display_pie_chart_contribution(relayout_data, figure_val):
             showlegend = False,
             name = name_aux,
             connector = {"line":{"color":"rgb(0, 0, 0)", 'width':5}},
-        ),1,2,
+        )#,1,2,
     )
 
     # Update dates in subtitles
-    dates_names = {
-            'Allocation':f'{df_weights_filt.index.max():%Y-%m-%d}',
-            'Contribution':f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}',
-        }
-    fig_pie_aux.for_each_annotation(lambda a: a.update(text = a.text + ' (' + dates_names[a.text] + ') <br>'))
+    # dates_names = {
+    #         'Allocation':f'{df_weights_filt.index.max():%Y-%m-%d}',
+    #         'Contribution':f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}',
+    #     }
+    # fig_pie_aux.for_each_annotation(lambda a: a.update(text = a.text + ' (' + dates_names[a.text] + ') <br>'))
 
     # https://stackoverflow.com/questions/66064756/how-to-change-subplot-size-and-decrease-space-between-subplot
     # fig_pie.layout.annotations[0].update(y=1.05, x = 0)
@@ -626,7 +773,7 @@ def display_pie_chart_contribution(relayout_data, figure_val):
 
     # fig_pie.update_layout(title_pad=dict(t=20), margin=dict(pad=15))
 
-    fig_pie_aux.update_layout(yaxis={'tickformat': ',.1%'},)
+    fig_pie_aux.update_layout(yaxis={'tickformat': ',.1%'},title = f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}')
 
     fig_pie_aux.update_layout(
                         template='plotly_dark',

@@ -156,6 +156,17 @@ def get_strategy_prices():
     id_model         = model_row['id']
     window_size      = model_row['window_size'].values[0]
     
+    # Initialize dictionary to map asset_id with asset name
+    dict_asset_name = {}
+    
+    # Retrieve asset header
+    asset_header = get_asset_header()
+    for asset_id in asset_list_model:
+        # Filter asset_header dataframe
+        asset_name_filt = asset_header.loc[asset_header['id'] == int(asset_id), 'shortname'].values[0]
+        
+        dict_asset_name[asset_id] = asset_name_filt
+    
     # Obtain asset price data
     df_recent_asset_prices = query_recent_asset_data()
     
@@ -214,6 +225,7 @@ def get_strategy_prices():
         'df_perf_ew'            :df_perf_ew,
         'df_model_weights'      :df_model_weights,
         'df_asset_return_model' :df_asset_return_model,
+        'dict_asset_name'       :dict_asset_name,
     }
     return dict_output
    
