@@ -699,7 +699,7 @@ def display_pie_chart_contribution(relayout_data, figure_val):
         Input('graph-figure','figure'),
     ]
 )
-def display_pie_chart_contribution(relayout_data, figure_val):
+def display_waterfall_chart(relayout_data, figure_val):
     # Retrieve initial and end dates
     try:
         ini_date = pd.to_datetime(figure_val['layout']["xaxis"]["range"][0], format = '%Y-%m-%d %H:%M:%S.%f')
@@ -722,10 +722,6 @@ def display_pie_chart_contribution(relayout_data, figure_val):
 
     #Filter weights
     df_weights_filt = df_weights.loc[(df_weights.index >= ini_date_filt)&(df_weights.index <= end_date_filt),:].copy()
-    # print(df_weights_filt)
-    
-    #Generate pie charts with TAA
-    values_pie = df_weights_filt.iloc[-1,:].values
 
     # fig_pie_aux = make_subplots(rows=1, cols=2, specs=[[
     #         {'type':'domain'},# type domain for pie charts
@@ -733,21 +729,21 @@ def display_pie_chart_contribution(relayout_data, figure_val):
     #     ]],
     #     subplot_titles=('Allocation', 'Contribution'),
     # )
-    fig_pie_aux = go.Figure()
+    fig_waterfall_aux = go.Figure()
 
     # Add pie chart
 
     # # Get last 3M contribution
     # df_weights_3M = df_weights_filt.copy()# .loc[(-21*3):,:].copy()
     df_contrib_returns_assets = (
-        df_weights_3M*df_asset_ret
+        df_weights_filt*df_asset_ret
     ).dropna()
 
     asset_contrib_returns = df_contrib_returns_assets.sum(axis = 0).values
 
     # Add bar chart
     name_aux = f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}'
-    fig_pie_aux.add_trace(
+    fig_waterfall_aux.add_trace(
         go.Waterfall(
             x = df_contrib_returns_assets.columns,
             y = asset_contrib_returns,
@@ -773,9 +769,9 @@ def display_pie_chart_contribution(relayout_data, figure_val):
 
     # fig_pie.update_layout(title_pad=dict(t=20), margin=dict(pad=15))
 
-    fig_pie_aux.update_layout(yaxis={'tickformat': ',.1%'},title = f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}')
+    fig_waterfall_aux.update_layout(yaxis={'tickformat': ',.1%'},title = f'{df_contrib_returns_assets.index.min():%Y-%m-%d} - {df_contrib_returns_assets.index.max():%Y-%m-%d}')
 
-    fig_pie_aux.update_layout(
+    fig_waterfall_aux.update_layout(
                         template='plotly_dark',
                         plot_bgcolor= 'rgba(0, 0, 0, 0)',
                         paper_bgcolor= 'rgba(0, 0, 0, 0)',
@@ -794,7 +790,7 @@ def display_pie_chart_contribution(relayout_data, figure_val):
                         margin=dict(l=0, r=0, t=25, b=0, autoexpand = True),
                         )
 
-    return fig_pie_aux
+    return fig_waterfall_aux
 
 
 
